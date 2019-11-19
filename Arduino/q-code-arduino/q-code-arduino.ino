@@ -19,12 +19,15 @@
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Version: 0.01 (2019-11-10)
 //*Initial version
+//Version: 0.02 (2019-11-19)
+//*add feature I2C for Raspberry Pi Readout
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Everything is voiding warranty of the specific products since the project involves soldering!!!
 //Legal Notice are written in the last lines of this file
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 //includes
+#include <Wire.h>
 #include <String.h>
 #include <LiquidCrystal.h>
 
@@ -88,9 +91,17 @@
 */
 #define ERRORLEDPin 21
 
+
+//I2C Output Address
+#define Address 0x80
+
 //global variables
 LiquidCrystal lcd(RSpin, EnablePin, DigitalPin4, DigitalPin5, DigitalPin6, DigitalPin7);
 int ERRORLED = 0;
+char WireMessage[80];
+void requestEvent(){
+  Wire.print(WireMessage);
+}
 
 void setup() {
   // put your setup code here, to run once:
@@ -113,6 +124,8 @@ void setup() {
   pinMode(LED2DP, INPUT);
   pinMode(ERRORLEDPin, OUTPUT);
   digitalWrite(ERRORLEDPin, LOW);
+  Wire.begin(Address);
+  Wire.onRequest(requestEvent);
 }
 
 char GetChar(int cchar) { //0 = L1 segment 1 = L2 segment
@@ -1067,7 +1080,9 @@ void loop() {
       }
       break;
   }
-  
+
+
+  strcpy(WireMessage,message);
   if (ERRORLED) {
     digitalWrite(ERRORLEDPin, HIGH);
     ERRORLED = 0;
@@ -1075,7 +1090,7 @@ void loop() {
   int h = 0;
   while (h * lenght < strlen(message)) {
     for (int i = 1; i < rows; ++i) {
-      lcd.setCursor(0, 1);
+      lcd.setCursor(0, i);
       char line[lenght];
       for (int j = 0 ; j < lenght; ++j) {
         line[j] = message[j];
